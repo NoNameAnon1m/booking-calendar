@@ -50,12 +50,12 @@ app.post('/api/appointments', (req, res) => {
     });
 });
 
-// Автоматическое открытие страницы календаря при входе на сайт
+// Открытие календаря по умолчанию на главной странице /
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'calendar.html'));
 });
 
-// Порт назначается сервисом Render
+// Динамический порт от Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Сервер запущен на порту ${PORT}`);
