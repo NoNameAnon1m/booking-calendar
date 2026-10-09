@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Бронирование фотосессии | KAN-14</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .booking-card {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #40a9ff;
+            font-size: 1.4rem;
+        }
+
+        p {
+            color: #aaa;
+            font-size: 0.9rem;
+        }
+
+        /* Сетка Календаря */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        .day-header {
+            font-weight: bold;
+            color: #888;
+            font-size: 0.8rem;
+            padding-bottom: 8px;
+        }
+
+        .day-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 12px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .day-btn:hover:not(.disabled) {
+            background: #007acc;
+            border-color: #40a9ff;
+        }
+
+        .day-btn.active {
+            background: #1890ff;
+            border-color: #40a9ff;
+            font-weight: bold;
+        }
+
+        .day-btn.disabled {
+            background: #161616;
+            color: #444;
+            border-color: #222;
+            cursor: not-allowed;
+        }
+
+        /* Слоты времени */
+        .slots-container {
+            margin-top: 24px;
+            display: none;
+        }
+
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .time-btn {
+            background: #2b2b2b;
+            border: 1px solid #007acc;
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .time-btn:hover {
+            background: #007acc;
+        }
+
+        /* Форма бронирования */
+        .form-modal {
+            margin-top: 24px;
+            display: none;
+            background: #262626;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid #1890ff;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #bbb;
+            margin-bottom: 4px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            background: #141414;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            background: #52c41a;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            background: #73d13d;
+        }
+
+        .success-msg {
+            display: none;
+            margin-top: 16px;
+            padding: 12px;
+            background: #274916;
+            border: 1px solid #52c41a;
+            border-radius: 6px;
+            color: #b7eb8f;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="booking-card">
+        <h2>📅 Выберите дату съемки</h2>
+        <p>Доступные дни подсвечены. Занятые даты заблокированы.</p>
+
+        <!-- Заголовки дней недели -->
+        <div class="calendar-grid">
+            <div class="day-header">Пн</div>
+            <div class="day-header">Вт</div>
+            <div class="day-header">Ср</div>
+            <div class="day-header">Чт</div>
+            <div class="day-header">Пт</div>
+            <div class="day-header">Сб</div>
+            <div class="day-header">Вс</div>
+
+            <!-- Дни месяца (19-25 октября) -->
+            <button class="day-btn disabled">19</button>
+            <button class="day-btn" onclick="selectDate(this, '2026-10-20')">20</button>
+            <button class="day-btn" onclick="selectDate(this, '2026-10-21')">21</button>
+            <button class="day-btn disabled">22</button>
+            <button class="day-btn" onclick="selectDate(this, '2026-10-23')">23</button>
+            <button class="day-btn" onclick="selectDate(this, '2026-10-24')">24</button>
+            <button class="day-btn disabled">25</button>
+        </div>
+
+        <!-- Блок со слотами времени -->
+        <div class="slots-container" id="slotsBlock">
+            <p><strong>Доступное время на <span id="selectedDateText"></span>:</strong></p>
+            <div class="slots-grid">
+                <button class="time-btn" onclick="selectTime('10:00')">10:00</button>
+                <button class="time-btn" onclick="selectTime('12:00')">12:00</button>
+                <button class="time-btn" onclick="selectTime('15:00')">15:00</button>
+            </div>
+        </div>
+
+        <!-- Модальная форма ввода данных -->
+        <div class="form-modal" id="formBlock">
+            <p style="margin-top: 0;"><strong>Бронирование на <span id="summaryText"></span></strong></p>
+            <form id="bookingForm" onsubmit="submitBooking(event)">
+                <div class="form-group">
+                    <label>Ваше имя</label>
+                    <input type="text" id="clientName" required placeholder="Олена Коваленко">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="clientEmail" required placeholder="olena@example.com">
+                </div>
+                <button type="submit" class="submit-btn">Подтвердить запись</button>
+            </form>
+        </div>
+
+        <!-- Сообщение об успехе -->
+        <div class="success-msg" id="successBlock">
+            ✅ Заявка успешно сохранена в базу данных!
+        </div>
+    </div>
+
+    <!-- Подключаем скрипт с логикой отправки на бэкенд -->
+    <script src="submitBooking.js"></script>
+
+</body>
+
+</html>
