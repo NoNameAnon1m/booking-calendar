@@ -1,28 +1,33 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 1. Настройка подключения к базе MySQL
+// Отдача статических файлов (calendar.html, submitBooking.js)
+app.use(express.static(__dirname));
+
+// Подключение к облачной БД из переменных окружения Render
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '1234',
-    database: 'photo_studio'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT
 });
 
 db.connect(err => {
     if (err) {
         console.error('Ошибка подключения к MySQL:', err);
     } else {
-        console.log('Успешное подключение к MySQL Workbench!');
+        console.log('Успешное подключение к облачной MySQL!');
     }
 });
 
-// 2. Эндпоинт для обработки бронирования
+// Обработка отправки формы
 app.post('/api/appointments', (req, res) => {
     const { client_name, client_email, appointment_date, appointment_time } = req.body;
 
@@ -45,7 +50,13 @@ app.post('/api/appointments', (req, res) => {
     });
 });
 
-// 3. Запуск сервера на порту 3000
-app.listen(3000, () => {
-    console.log('Бэкенд запущен на http://localhost:3000');
+// Автоматическое открытие страницы календаря при входе на сайт
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'calendar.html'));
+});
+
+// Порт назначается сервисом Render
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Сервер запущен на порту ${PORT}`);
 });
