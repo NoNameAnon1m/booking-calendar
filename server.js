@@ -11,8 +11,10 @@ app.use(express.json());
 // Инициализация почтового клиента Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// Отдача статических файлов (calendar.html, submitBooking.js)
 app.use(express.static(__dirname));
 
+// Подключение к облачной БД из переменных окружения Render
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -29,6 +31,7 @@ db.connect(err => {
     }
 });
 
+// Обработка отправки формы
 app.post('/api/appointments', async (req, res) => {
     const { client_name, client_email, appointment_date, appointment_time } = req.body;
 
@@ -45,6 +48,7 @@ app.post('/api/appointments', async (req, res) => {
 
         console.log(`Новая запись создана с ID: ${result.insertId}`);
 
+        // Отправка email-уведомления через Resend HTTP API
         try {
             const data = await resend.emails.send({
                 from: 'onboarding@resend.dev',
@@ -68,10 +72,12 @@ app.post('/api/appointments', async (req, res) => {
     });
 });
 
+// Открытие календаря по умолчанию на главной странице /
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'calendar.html'));
 });
 
+// Динамический порт от Render
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Сервер запущен на порту ${PORT}`);
