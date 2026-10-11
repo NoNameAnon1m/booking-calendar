@@ -2,7 +2,11 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const path = require('path');
-const nodemailer = require('nodemailer'); // 1. Подключаем Nodemailer
+const nodemailer = require('nodemailer');
+const dns = require('dns');
+
+// Принудительно используем IPv4 (решает проблему ETIMEDOUT на Render)
+dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 app.use(cors());
@@ -28,11 +32,12 @@ db.connect(err => {
     }
 });
 
-// Настройка почтового транспорта Gmail (через защищённый порт 465)
+// Настройка почтового транспорта Gmail (с явным IPv4 и портом 465)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
+    family: 4, // Использовать исключительно IPv4
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS ? process.env.EMAIL_PASS.replace(/\s+/g, '') : ''
@@ -56,7 +61,7 @@ app.post('/api/appointments', (req, res) => {
 
         console.log(`Новая запись создана с ID: ${result.insertId}`);
 
-        // 3. Отправка email-уведомления клиенту
+        // Отправка email-уведомления клиенту
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: client_email,
