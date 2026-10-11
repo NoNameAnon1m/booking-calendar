@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const path = require('path');
+const nodemailer = require('nodemailer'); // 1. Подключаем Nodemailer
 
 const app = express();
 app.use(cors());
@@ -27,6 +28,15 @@ db.connect(err => {
     }
 });
 
+// 2. Настройка почтового транспорта (Gmail / Yandex / Ukr.net)
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER, // Ваш email
+        pass: process.env.EMAIL_PASS  // Пароль приложения
+    }
+});
+
 // Обработка отправки формы
 app.post('/api/appointments', (req, res) => {
     const { client_name, client_email, appointment_date, appointment_time } = req.body;
@@ -43,6 +53,23 @@ app.post('/api/appointments', (req, res) => {
         }
 
         console.log(`Новая запись создана с ID: ${result.insertId}`);
+
+        // 3. Отправка email-уведомления клиенту
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: client_email,
+            subject: 'Подтверждение бронирования фотосессии',
+            text: `Здравствуйте, ${client_name}!\n\nВы успешно записались на фотосессию.\nДата: ${appointment_date}\nВремя: ${appointment_time}\n\nСпасибо за бронирование!`
+        };
+
+        transporter.sendMail(mailOptions, (mailErr, info) => {
+            if (mailErr) {
+                console.error('Ошибка отправки email:', mailErr);
+            } else {
+                console.log('Email успешно отправлен:', info.response);
+            }
+        });
+
         res.status(201).json({
             message: 'Запись успешно сохранена!',
             appointmentId: result.insertId
